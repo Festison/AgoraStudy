@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Agora.Rtc;
- 
 using UnityEngine.Serialization;
  
 
@@ -70,7 +69,8 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.ScreenShare
             }
         }
 
-        #region 신경 안써도되는 초기화 부분
+        #region 아고라를 사용하기 위해서는 AppID, token, channelName이 필요합니다.
+        필요한 정보를 초기화 하는 부분
         private bool CheckAppId()
         {
             Log = new Logger(LogText);
@@ -106,19 +106,20 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.ScreenShare
         }
         #endregion
 
-        #region -- Button Events ---
-
+        #region 아고라를 사용할때 특정 UI에 대응 되거나 상호작용 하면 들어가야할 특수한 이벤트 입니다.
+        화면공유 시스템 프로세스 1. 방입장 -> 2. 화면공유 시작 -> 3. 퍼블리싱 -> 4. 화면공유 완료 
+        // 1. 채널 입장
         public void JoinChannel(string _channelNameSet)
         {
             RtcEngine.JoinChannel(_token, _channelNameSet);
             _channelName= _channelNameSet; 
         }
-
+        // 2. 채널 떠나기
         public void LeaveChannel()
         {
             RtcEngine.LeaveChannel();
         }
-
+        // 3. 퍼블리싱 이벤트
         public void OnPublishButtonClick()
         {
             ChannelMediaOptions options = new ChannelMediaOptions();
@@ -135,7 +136,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.ScreenShare
             UnpublishBtn.gameObject.SetActive(true);
             Debug.Log("퍼블리시 시작");
         }
-
+        // 4. 퍼블리싱 관두기 이벤트
         public void OnUnplishButtonClick()
         {
             ChannelMediaOptions options = new ChannelMediaOptions();
@@ -153,7 +154,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.ScreenShare
             UnpublishBtn.gameObject.SetActive(false);
         }
 
-        // 캡처 부분 신경 x
+        // 5. 현재 내가 가지고 있는 화면들을 캡처해 Dropdown에 표시
         public void PrepareScreenCapture()
         {
             if (WinIdSelect == null || RtcEngine == null) return;
@@ -174,38 +175,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.ScreenShare
                 .ToList());
         }
 
-        //
-        public void OnStartShareBtnClick()
-        {
-            if (RtcEngine == null) return;
-
-            if (WinIdSelect == null) return;
-            var option = WinIdSelect.options[WinIdSelect.value].text;
-            if (string.IsNullOrEmpty(option)) return;
-
-            if (option.Contains("ScreenCaptureSourceType_Window"))
-            {
-                var windowId = option.Split("|".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)[1];
-                Log.UpdateLog(string.Format(">>>>> Start sharing {0}", windowId));
-                var nRet = RtcEngine.StartScreenCaptureByWindowId(long.Parse(windowId), default(Rectangle),
-                        default(ScreenCaptureParameters));
-                this.Log.UpdateLog("StartScreenCaptureByWindowId:" + nRet);
-            }
-            else
-            {
-                var dispId = uint.Parse(option.Split("|".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)[1]);
-                Log.UpdateLog(string.Format(">>>>> Start sharing display {0}", dispId));
-                var nRet = RtcEngine.StartScreenCaptureByDisplayId(dispId, default(Rectangle),
-                    new ScreenCaptureParameters { captureMouseCursor = true, frameRate = 30 });
-                this.Log.UpdateLog("StartScreenCaptureByDisplayId:" + nRet);
-            }
-
-            RtcEngine.StopScreenCapture();
-            OnPublishButtonClick();
-            ScreenShare.MakeVideoView(0, "", VIDEO_SOURCE_TYPE.VIDEO_SOURCE_SCREEN);
-            Debug.Log("공유 시작");
-        }
-
+        // 6. 화면 공유 시작 (화면 공유는 내가 보는 화면, 공유 하고싶은 화면 두가지의 타입이 있다. 또한 원격으로 할지도 방을 들어갈때 정해진다.)
         public void OnStartShareBtnClick(long dispId, string roomid, ScreenCaptureSourceType type)
         {
             if (RtcEngine == null) return;
